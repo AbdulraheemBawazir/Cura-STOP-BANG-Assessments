@@ -7,15 +7,30 @@ export async function POST(request: NextRequest) {
     // Email configuration
     const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL // e.g., SendGrid, Resend, etc.
     const EMAIL_API_KEY = process.env.EMAIL_API_KEY
-    const NOTIFICATION_EMAIL = process.env.NOTIFICATION_EMAIL || 'healthcare@airliquide.com'
+    const NOTIFICATION_EMAIL = 'abawazir@cura.sa'
     const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@cura-medical.com'
     
-    if (!EMAIL_API_KEY) {
-      throw new Error('Email service configuration missing')
+    // For testing: Log the email content instead of sending
+    if (!EMAIL_API_KEY || !EMAIL_SERVICE_URL) {
+      console.log(' EMAIL NOTIFICATION (TEST MODE)')
+      console.log('To:', NOTIFICATION_EMAIL)
+      console.log('From:', FROM_EMAIL)
+      console.log('Subject:', ` طلب استشارة جديد - ${userData.name} (${userData.priority} أولوية)`)
+      console.log('Patient:', userData.name, '- Score:', userData.totalScore, '- Risk:', userData.riskLevel)
+      console.log('Phone:', userData.phone)
+      console.log('Submission Date:', userData.submissionDateArabic)
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Email logged successfully (test mode)',
+        mode: 'test',
+        recipient: NOTIFICATION_EMAIL,
+        timestamp: new Date().toISOString()
+      })
     }
     
     // Create comprehensive email content
-    const emailSubject = `🏥 طلب استشارة جديد - ${userData.name} (${userData.priority} أولوية)`
+    const emailSubject = ` طلب استشارة جديد - ${userData.name} (${userData.priority} أولوية)`
     
     const emailHTML = `
     <!DOCTYPE html>
