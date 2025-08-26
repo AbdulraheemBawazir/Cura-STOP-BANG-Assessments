@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     const userData = await request.json()
     
     // Google Sheets configuration
-    const GOOGLE_SHEETS_URL = process.env.GOOGLE_SHEETS_WEBHOOK_URL
+    const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyLJyLgvEIdq1UC7KcuKUQ-Stwekr5F2kydCioBB7RMAiJyvRhuTHUy6ixTGe6L6kRF/exec'
     
     if (!GOOGLE_SHEETS_URL) {
       throw new Error('Google Sheets configuration missing')

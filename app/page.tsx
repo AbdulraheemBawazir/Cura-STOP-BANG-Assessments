@@ -486,26 +486,6 @@ const Step3Component = memo(({ patientInfo, setPatientInfo, answers, setAnswers 
 Step3Component.displayName = "Step3Component"
 
 // Data submission utilities
-const submitToAirtable = async (userData: any) => {
-  try {
-    const response = await fetch('/api/submit-to-airtable', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    })
-    
-    if (!response.ok) {
-      throw new Error('Failed to submit to Airtable')
-    }
-    
-    return await response.json()
-  } catch (error) {
-    console.error('Airtable submission error:', error)
-    throw error
-  }
-}
 
 const submitToGoogleSheets = async (userData: any) => {
   try {
@@ -650,7 +630,7 @@ export default function CuraHealthPlatform() {
       "الجنس ذكر": patientInfo.gender === "male" ? "نعم" : "لا",
       "محيط الرقبة": answers.neck === "yes" ? "نعم" : "لا",
       "النتيجة النهائية": `${score}/8`,
-      "تاريخ التقييم": new Date().toLocaleDateString("ar-SA"),
+      "تاريخ التقييم": new Date().toLocaleDateString("en-GB"),
     }
 
     const headers = Object.keys(data).join(",")
@@ -709,7 +689,7 @@ export default function CuraHealthPlatform() {
       
       // Metadata
       submissionDate: new Date().toISOString(),
-      submissionDateArabic: new Date().toLocaleDateString("ar-SA"),
+      submissionDateArabic: new Date().toLocaleDateString("en-GB"),
       platform: "منصة كيورا الطبية",
       source: "STOP-BANG Assessment",
       status: "طلب استشارة جديد",
@@ -727,18 +707,10 @@ export default function CuraHealthPlatform() {
     }
 
     try {
-      // Attempt multiple submission methods for reliability
+      // Submit to Google Sheets only
       const submissionPromises = []
       
-      // Primary: Airtable submission
-      submissionPromises.push(
-        submitToAirtable(submissionData).catch((error: unknown) => ({ 
-          service: 'Airtable', 
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }))
-      )
-      
-      // Backup: Google Sheets submission
+      // Primary: Google Sheets submission
       submissionPromises.push(
         submitToGoogleSheets(submissionData).catch((error: unknown) => ({ 
           service: 'Google Sheets', 
@@ -882,9 +854,9 @@ export default function CuraHealthPlatform() {
                     }`}
                   >
                     {isCompleted ? (
-                      <CheckCircle className="w-5 h-5 md:w-6 md:h-6" />
+                      <CheckCircle className="w-5 h-5" />
                     ) : (
-                      <IconComponent className="w-5 h-5 md:w-6 md:h-6" />
+                      <IconComponent className="w-5 h-5" />
                     )}
                   </div>
                   <div className="text-center">
@@ -902,154 +874,85 @@ export default function CuraHealthPlatform() {
     </div>
   )
 
-  // Success Page
+  // Success Page - Minimalist Design
   const SuccessPage = () => {
     const score = calculateScore()
-    const currentDate = new Date().toLocaleDateString("ar-SA", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
 
     return (
       <div className="min-h-screen cura-bg-gradient flex items-center justify-center p-4 cura-fade-in" dir="rtl">
-        <div className="max-w-3xl w-full">
+        <div className="max-w-lg w-full">
           {/* Success Header */}
-          <div className="text-center mb-6 md:mb-8">
-            <div className="relative mb-4 md:mb-6">
-              <div className="w-28 h-28 md:w-32 md:h-32 mx-auto cura-success rounded-full flex items-center justify-center cura-shadow-xl cura-bounce-gentle">
-                <CheckCircle className="w-14 h-14 md:w-16 md:h-16 text-white" />
-              </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full cura-bounce-gentle flex items-center justify-center">
-                <Star className="w-4 h-4 text-white" />
-              </div>
+          <div className="text-center mb-8">
+            <div className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-6 cura-success rounded-full flex items-center justify-center cura-shadow-lg cura-bounce-gentle">
+              <CheckCircle className="w-12 h-12 md:w-14 md:h-14 text-white" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-4">🎉 تم بنجاح!</h1>
-            <p className="text-lg md:text-xl text-gray-600 mb-1 md:mb-2">
-              شكراً لثقتك في منصة كيورا، {patientInfo.name}
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">تم بنجاح! 🎉</h1>
+            <p className="text-lg text-gray-600 mb-2">
+              شكراً لثقتك، {patientInfo.name}
             </p>
-            <p className="text-sm text-gray-500">{currentDate}</p>
+            <p className="text-sm text-gray-500">تم إرسال تقييمك بنجاح</p>
           </div>
 
-          <Card className="cura-card cura-shadow-xl overflow-hidden">
-            <CardContent className="p-0">
-              {/* Header Section */}
-              <div className="cura-secondary text-white p-6 md:p-8 text-center">
-                <Heart className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 md:mb-4" />
-                <h2 className="text-xl md:text-2xl font-bold mb-2">تم إرسال تقييمك بنجاح</h2>
-                <div className="bg-white/20 rounded-lg p-3 inline-block">
-                  <p className="text-lg font-bold">نتيجة التقييم: {score} من ٨</p>
+          <Card className="cura-card cura-shadow-lg overflow-hidden mb-6">
+            <CardContent className="p-6 text-center">
+              {/* Score Display */}
+              <div className="mb-6">
+                <div className="bg-blue-50 rounded-lg p-4 inline-block">
+                  <p className="text-lg font-bold text-blue-800">نتيجة التقييم: {score} من ٨</p>
                 </div>
               </div>
 
-              {/* Main Content */}
-              <div className="p-6 md:p-8 space-y-6 md:space-y-8">
-                {/* Status Timeline */}
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-gray-800 text-center mb-4 md:mb-6 flex items-center justify-center gap-2">
-                    <Sparkles className="w-6 h-6" />
-                    رحلة العناية بصحتك
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 bg-green-50 rounded-lg border-2 border-green-200 cura-fade-in">
-                      <div className="w-8 h-8 md:w-10 md:h-10 cura-success rounded-full flex items-center justify-center text-white font-bold">
-                        ✓
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-green-800">تم الإرسال بنجاح</h4>
-                        <p className="text-sm text-green-700">
-                          وصلت بياناتك بأمان إلى فريق Air Liquide Healthcare
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border-2 border-blue-200 cura-fade-in" style={{ animationDelay: '200ms' }}>
-                      <div className="w-8 h-8 md:w-10 md:h-10 cura-secondary rounded-full flex items-center justify-center text-white font-bold">
-                        ٢
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-blue-800">المراجعة الأولية</h4>
-                        <p className="text-sm text-blue-700">
-                          سيقوم خبراؤنا بمراجعة نتيجتك الأولية خلال ٢٤ ساعة
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg border-2 border-red-200 cura-fade-in" style={{ animationDelay: '400ms' }}>
-                      <div className="w-8 h-8 md:w-10 md:h-10 cura-primary rounded-full flex items-center justify-center text-white font-bold">
-                        ٣
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-red-800">التواصل المباشر</h4>
-                        <p className="text-sm text-red-700">
-                          سيتم الاتصال بك على {patientInfo.phone} لتحديد موعد الاستشارة المجانية
-                        </p>
-                      </div>
-                    </div>
+              {/* Next Steps */}
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <div className="w-8 h-8 cura-success rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    ✓
+                  </div>
+                  <div className="text-right">
+                    <h4 className="font-bold text-green-800 text-sm">تم الإرسال بنجاح</h4>
+                    <p className="text-xs text-green-700">وصلت بياناتك إلى فريق Air Liquide</p>
                   </div>
                 </div>
 
-                {/* What to Expect from Free Consultation */}
-                <div className="cura-info text-white rounded-lg p-4 md:p-6 cura-fade-in" style={{ animationDelay: '600ms' }}>
-                  <h3 className="text-xl font-bold mb-3 md:mb-4 text-center flex items-center justify-center gap-2">
-                    <Sparkles className="w-6 h-6" />
-                    ماذا تتوقع من استشارتك المجانية؟
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      <span>شرح مفصل لنتائج تقييمك</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Award className="w-4 h-4" />
-                      <span>نصائح وتوصيات أولية</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      <span>الإجابة على استفساراتك</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      <span>معرفة الخطوات التالية</span>
-                    </div>
+                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="w-8 h-8 cura-secondary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    ٢
                   </div>
-                </div>
-
-                {/* Download Section */}
-                <div className="text-center cura-fade-in" style={{ animationDelay: '800ms' }}>
-                  <Button
-                    onClick={downloadResults}
-                    className="cura-btn-primary px-6 py-3 md:px-8 md:py-4 text-base md:text-lg flex items-center gap-3 mx-auto"
-                  >
-                    <Download className="w-5 h-5" />
-                    تحميل نسخة من تقييمك
-                  </Button>
-                  <p className="text-xs text-gray-500 mt-2 md:mt-3">احتفظ بنسخة من النتائج لمراجعتها مع الطبيب</p>
-                </div>
-
-                {/* Security Note */}
-                <div className="bg-gray-50 rounded-lg p-3 md:p-4 text-center border border-gray-200 cura-fade-in" style={{ animationDelay: '1000ms' }}>
-                  <Shield className="w-6 h-6 mx-auto mb-2 text-gray-600" />
-                  <p className="text-sm text-gray-700 font-medium flex items-center justify-center gap-2">
-                    <span>🔒</span>
-                    بياناتك محمية بأعلى معايير الأمان وتُستخدم فقط للأغراض الطبية
-                  </p>
+                  <div className="text-right">
+                    <h4 className="font-bold text-blue-800 text-sm">سيتم التواصل معك</h4>
+                    <p className="text-xs text-blue-700">خلال ٢٤ ساعة على {patientInfo.phone}</p>
+                  </div>
                 </div>
               </div>
+
+              {/* Download Button */}
+              <Button
+                onClick={downloadResults}
+                className="cura-btn-primary px-6 py-3 text-base flex items-center gap-2 mx-auto mb-4"
+              >
+                <Download className="w-4 h-4" />
+                تحميل التقرير
+              </Button>
+              <p className="text-xs text-gray-500">احتفظ بنسخة للمراجعة مع الطبيب</p>
             </CardContent>
           </Card>
 
-          {/* Footer */}
-          <div className="text-center mt-6 md:mt-8 text-gray-500 text-sm space-y-2">
-            <p>© ٢٠٢٤ منصة كيورا الطبية</p>
-            <p className="flex items-center justify-center gap-2">
-              <span>بالشراكة مع</span>
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium text-xs">
-                Air Liquide Healthcare
-              </span>
-            </p>
+          {/* Trust & Footer */}
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+              <Shield className="w-4 h-4" />
+              <span>بياناتك محمية وآمنة</span>
+            </div>
+            
+            <div className="text-xs text-gray-500 space-y-1">
+              <p>© ٢٠٢٤ منصة كيورا الطبية</p>
+              <p className="flex items-center justify-center gap-2">
+                <span>بالشراكة مع</span>
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                  Air Liquide Healthcare
+                </span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -1068,223 +971,212 @@ export default function CuraHealthPlatform() {
     return (
       <div className="space-y-6 md:space-y-8 cura-fade-in">
         {isLowRisk ? (
-          // Low Risk - Simple & Reassuring
-          <div className="max-w-xl mx-auto text-center">
-            <div className="w-28 h-28 md:w-32 md:h-32 mx-auto mb-6 md:mb-8 cura-success rounded-full flex items-center justify-center cura-shadow-xl cura-bounce-gentle">
+          // Low Risk - Clean & Simple
+          <div className="max-w-lg mx-auto text-center">
+            <div className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-6 cura-success rounded-full flex items-center justify-center cura-shadow-lg cura-bounce-gentle">
               <div className="text-white text-center">
-                <div className="text-3xl md:text-4xl font-bold">{score}</div>
-                <div className="text-sm opacity-80">من 8</div>
+                <div className="text-2xl md:text-3xl font-bold">{score}</div>
+                <div className="text-xs opacity-80">من 8</div>
               </div>
             </div>
 
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3 md:mb-4 flex items-center justify-center gap-2">
-              <Sparkles className="w-8 h-8" />
-              نتيجة مطمئنة! 🎉
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 mb-6 md:mb-8">احتمالية منخفضة لانقطاع التنفس أثناء النوم</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">نتيجة مطمئنة! 🎉</h2>
+            <p className="text-lg text-gray-600 mb-8">احتمالية منخفضة لانقطاع التنفس أثناء النوم</p>
 
-            <div className="bg-green-50 rounded-2xl p-6 md:p-8 mb-6 md:mb-8 border border-green-200">
-              <h3 className="text-lg font-bold text-green-800 mb-3 md:mb-4 flex items-center justify-center gap-2">
-                <Award className="w-6 h-6" />
-                نصائح للحفاظ على نوم صحي:
-              </h3>
-              <div className="grid grid-cols-2 gap-3 md:gap-4 text-sm text-green-700">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>نوم منتظم</span>
+            <Card className="cura-card mb-6">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-lg font-bold text-green-800 mb-4 flex items-center justify-center gap-2">
+                  <Award className="w-5 h-5" />
+                  نصائح للحفاظ على نوم صحي
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm text-green-700">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span>نوم منتظم</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span>تجنب الكافيين مساءً</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span>ممارسة الرياضة</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span>وزن صحي</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>تجنب الكافيين مساءً</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>ممارسة الرياضة</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span>وزن صحي</span>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             <Button
               onClick={downloadResults}
-              className="cura-btn-secondary px-6 py-2 md:px-8 md:py-3 text-base md:text-lg flex items-center gap-2 mx-auto"
+              className="cura-btn-secondary px-6 py-3 text-base flex items-center gap-2 mx-auto"
             >
-              <Download className="w-5 h-5" />
+              <Download className="w-4 h-4" />
               تحميل التقرير
             </Button>
+
+            {/* Restart Option */}
+            <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+              <Button
+                onClick={() => {
+                  // Clear all saved data
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('cura-patient-info')
+                    localStorage.removeItem('cura-answers')
+                    localStorage.removeItem('cura-current-step')
+                  }
+                  // Reset all state
+                  setPatientInfo({
+                    name: "",
+                    age: "",
+                    phone: "",
+                    gender: "",
+                    bodyWeight: "",
+                    height: "",
+                  })
+                  setAnswers({})
+                  setCurrentStep(1)
+                  setShowSuccessPage(false)
+                  setIsProcessing(false)
+                  setHasConsented(false)
+                }}
+                variant="ghost"
+                className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-2 mx-auto"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                إعادة الاختبار من البداية
+              </Button>
+            </div>
           </div>
         ) : (
-          // High Risk - Focused & Compelling
-          <div className="max-w-2xl mx-auto">
+          // High Risk - Focused & Clean
+          <div className="max-w-xl mx-auto">
             {/* Score Display */}
-            <div className="text-center mb-6 md:mb-8">
-              <div className="w-28 h-28 md:w-32 md:h-32 mx-auto mb-4 md:mb-6 cura-primary rounded-full flex items-center justify-center cura-shadow-xl cura-bounce-gentle">
+            <div className="text-center mb-8">
+              <div className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-4 cura-primary rounded-full flex items-center justify-center cura-shadow-lg cura-bounce-gentle">
                 <div className="text-white text-center">
-                  <span className="text-3xl md:text-4xl font-bold">{score}</span>
-                  <span className="text-sm opacity-80">من 8</span>
+                  <span className="text-2xl md:text-3xl font-bold">{score}</span>
+                  <span className="text-xs opacity-80 block">من 8</span>
                 </div>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-2">
-                <Sparkles className="w-8 h-8" />
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
                 {score >= 6 ? "خطورة عالية ⚠️" : "خطورة متوسطة ⚠️"}
               </h2>
-              <p className="text-lg md:text-xl text-gray-600">
+              <p className="text-lg text-gray-600">
                 احتمالية {score >= 6 ? "عالية" : "متوسطة"} لانقطاع التنفس أثناء النوم
               </p>
             </div>
 
             {/* Main Card */}
-            <Card className="cura-card cura-shadow-xl overflow-hidden">
+            <Card className="cura-card cura-shadow-lg overflow-hidden mb-6">
               <CardContent className="p-0">
-                {/* Problem Section */}
-                <div className="bg-red-50 p-6 md:p-8 border-b border-red-200">
-                  <h3 className="text-xl md:text-2xl font-bold text-red-800 mb-3 md:mb-4 text-center flex items-center justify-center gap-2">
-                    <Award className="w-6 h-6" />
-                    لماذا يجب أن تهتم بنومك؟
-                  </h3>
-                  <p className="text-base md:text-lg text-red-700 mb-4 md:mb-6 text-center">
-                    اضطرابات النوم قد تؤثر على صحتك وجودة حياتك بشكل كبير.
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 md:gap-4 text-red-700">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span>تعب مستمر وإرهاق</span>
+                {/* Problem Awareness */}
+                <div className="bg-red-50 p-6 border-b border-red-200 text-center">
+                  <h3 className="text-xl font-bold text-red-800 mb-3">لماذا يجب أن تهتم؟</h3>
+                  <p className="text-red-700 mb-4">اضطرابات النوم قد تؤثر على صحتك وجودة حياتك</p>
+                  <div className="grid grid-cols-2 gap-3 text-sm text-red-700">
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      <span>تعب مستمر</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                       <span>صعوبة التركيز</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                       <span>مشاكل القلب</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                       <span>ارتفاع الضغط</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Free Consultation Section */}
-                <div className="p-6 md:p-8 text-center bg-blue-50 border-b border-blue-200">
-                  <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 cura-info rounded-full flex items-center justify-center">
-                    <Phone className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                {/* Solution */}
+                <div className="p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 cura-info rounded-full flex items-center justify-center">
+                    <Phone className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-3 md:mb-4 flex items-center justify-center gap-2">
-                    <Sparkles className="w-6 h-6" />
-                    خطوتك الأولى: استشارة مجانية
-                  </h3>
-                  <p className="text-base md:text-lg text-gray-600 mb-4 md:mb-6">
-                    في هذه الاستشارة، سيقوم خبراء Air Liquide بـ:
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-gray-700 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>شرح مفصل لنتائج تقييمك</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Award className="w-4 h-4 text-blue-500" />
-                      <span>تقديم نصائح وتوصيات أولية</span>
-                    </div>
-                  </div>
-                  <p className="text-xs md:text-sm text-gray-500 mt-3 md:mt-4">
-                    (الاستشارة المجانية لا تتضمن تقييماً شاملاً لحالتك، خطة علاجية مخصصة، أو متابعة مستمرة)
-                  </p>
-                </div>
-
-                {/* Full Program Benefits Section */}
-                <div className="p-6 md:p-8 text-center">
-                  <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 cura-secondary rounded-full flex items-center justify-center">
-                    <Heart className="w-8 h-8 md:w-10 md:h-10 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-3 md:mb-4 flex items-center justify-center gap-2">
-                    <Sparkles className="w-6 h-6" />
-                    للحصول على رعاية متكاملة:
-                  </h3>
-                  <p className="text-base md:text-lg text-gray-600 mb-6 md:mb-8">
-                    بعد الاستشارة الأولية، يمكنك استكشاف برنامجنا الشامل الذي يقدم:
-                  </p>
-                  <div className="grid grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-                    <div className="text-center">
-                      <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-2 md:mb-3 bg-blue-100 rounded-full flex items-center justify-center">
-                        <FileText className="w-7 h-7 md:w-8 md:h-8 text-blue-600" />
-                      </div>
-                      <p className="text-sm font-medium">تقييم طبي شامل</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-2 md:mb-3 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Award className="w-7 h-7 md:w-8 md:h-8 text-blue-600" />
-                      </div>
-                      <p className="text-sm font-medium">خطة علاجية مخصصة</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-2 md:mb-3 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users className="w-7 h-7 md:w-8 md:h-8 text-blue-600" />
-                      </div>
-                      <p className="text-sm font-medium">متابعة ودعم مستمر</p>
-                    </div>
-                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">استشارة مجانية مع خبراء Air Liquide</h3>
+                  <p className="text-gray-600 mb-6">احصل على تقييم مفصل لحالتك ونصائح متخصصة</p>
 
                   {/* CTA */}
                   {isProcessing ? (
-                    <div className="bg-blue-50 rounded-2xl p-6 md:p-8 border border-blue-200">
-                      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4 cura-loading"></div>
-                      <h4 className="text-xl font-bold text-blue-800 mb-2">جاري الإرسال...</h4>
-                      <p className="text-blue-700">سيتم التواصل معك خلال 24 ساعة</p>
+                    <div className="bg-blue-50 rounded-lg p-6">
+                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3 cura-loading"></div>
+                      <h4 className="text-lg font-bold text-blue-800 mb-1">جاري الإرسال...</h4>
+                      <p className="text-sm text-blue-700">سيتم التواصل معك خلال 24 ساعة</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <Button
                         onClick={handleConsent}
-                        className="w-full cura-btn-primary px-6 py-4 md:px-8 md:py-6 text-xl md:text-2xl font-bold"
+                        className="w-full cura-btn-primary px-6 py-4 text-lg font-bold"
                       >
                         احجز استشارتك المجانية الآن
                       </Button>
-                      <p className="text-xs md:text-sm text-gray-500 mt-2">
-                        بالضغط على "احجز استشارتك المجانية الآن"، فإنك توافق على إرسال بيانات تقييمك إلى Air Liquide
-                        Healthcare.
+                      <p className="text-xs text-gray-500">
+                        بالضغط على الزر، توافق على إرسال بيانات تقييمك إلى Air Liquide Healthcare
                       </p>
-
-                      <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>مجاني 100%</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Shield className="w-4 h-4 text-blue-500" />
-                          <span>سري وآمن</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-orange-500" />
-                          <span>خلال 24 ساعة</span>
-                        </div>
-                      </div>
                     </div>
                   )}
                 </div>
-
-                {/* Trust Section */}
-                <div className="bg-gray-50 p-4 md:p-6 text-center border-t">
-                  <div className="flex items-center justify-center gap-6 md:gap-8 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Award className="w-4 h-4" />
-                      <span>معتمد طبياً</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      <span>+1000 مريض</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-yellow-500" />
-                      <span>تقييم 4.9/5</span>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
+
+            {/* Trust Indicators */}
+            <div className="flex items-center justify-center gap-6 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>مجاني 100%</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <span>سري وآمن</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4 text-orange-500" />
+                <span>خلال 24 ساعة</span>
+              </div>
+            </div>
+
+            {/* Restart Option */}
+            <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+              <Button
+                onClick={() => {
+                  // Clear all saved data
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('cura-patient-info')
+                    localStorage.removeItem('cura-answers')
+                    localStorage.removeItem('cura-current-step')
+                  }
+                  // Reset all state
+                  setPatientInfo({
+                    name: "",
+                    age: "",
+                    phone: "",
+                    gender: "",
+                    bodyWeight: "",
+                    height: "",
+                  })
+                  setAnswers({})
+                  setCurrentStep(1)
+                  setShowSuccessPage(false)
+                  setIsProcessing(false)
+                  setHasConsented(false)
+                }}
+                variant="ghost"
+                className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-2 mx-auto"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                إعادة الاختبار من البداية
+              </Button>
+            </div>
           </div>
         )}
       </div>
